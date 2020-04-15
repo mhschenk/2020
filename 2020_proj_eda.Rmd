@@ -1,0 +1,128 @@
+---
+title: "2020_proj_EDA"
+author: "Marie Schenk"
+date: "4/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+if (!require("pacman")){ install.packages("pacman") }
+pacman::p_load("knitr","mosaic","plyr","dplyr","ggplot2","readstata13","car","lmtest","sandwich","gtable","grid","texreg","ISLR","MASS","class","psych","htmltab","acs","scales","noncensus","foreign","haven",
+               "maptools","rgeos","rgdal","ggmap","tidyverse","tidyselect")
+opts_chunk$set(eval=T,echo=T,message=F,warning=F,cache=T)
+```
+
+
+```{r}
+setwd("~/Documents/School/Data Science/Data 2020/Final Project")
+
+df <- read.delim("data-final.csv", header=TRUE)
+  
+#add a respondent ID variable
+df <- rowid_to_column(df, "id")
+
+#deal with 0's and nulls - make them all NA's
+
+table(df$EST1)
+
+table(df$EXT1_E)
+
+colnames(df)
+
+#make a dataframe of just the traits, which need the data cleaned up (could I do this all within df? maybe)
+df_traits <- df[ , 1:51]
+colnames(df_traits) #it worked
+
+df_traits[df_traits==0]<- NA
+table(df_traits$EXT1, exclude = NULL)
+table(df$EXT1, exclude = NULL)
+
+df_traits[df_traits=="NULL"]<- NA
+table(df_traits$EXT1, exclude = NULL) #why are 0 and NULL still listed as an option?
+
+#convert the dataframe to numeric values instead of factors
+df_traits <- as.data.frame(sapply(df_traits, as.numeric))
+
+table(df_traits$EXT1, exclude = NULL) #ok, getting there. now the values run from 2-6
+
+#subtraction function to make values be 1-5 instead
+sub_fn <- function(x) {
+  x <- (x-1)
+  return(x)
+}
+
+#naively apply it to the whole dataframe and hope for the best
+df_traits <- as.data.frame(sapply(df_traits, sub_fn))
+
+table(df_traits$EXT2, exclude = NULL) #it worked! whew.
+
+#function for flipping the coding (hat tip to Prof. Paul Testa) 
+flip_fn <- function(x){
+  x <- (x - (max(x,na.rm=T) + min(x,na.rm = T))) * -1 
+  return(x)
+}
+
+#Code so that a higher number always means more presence of that trait. Flip the coding of negative items that actually indicate a lower presence of the trait see codebook_MHS for which items are neg.
+
+
+#Extravertedness
+
+df_recode <- df_traits %>% mutate_at(vars("EXT2", "EXT4", "EXT6", "EXT8", "EXT10"), funs(flip_fn))
+
+table(df_traits$EXT2, df_recode$EXT2) #it worked
+
+#Emotional Stability
+
+#now that the df_recode dataframe exists, overwrite it
+df_recode <- df_recode %>% mutate_at(vars("EST1", "EST3", "EST4", "EST5", "EST6", "EST7", "EST8", "EST9", "EST10"), funs(flip_fn))
+
+table(df_traits$EST1, df_recode$EST1) #it worked
+
+#Agreeableness
+
+df_recode <- df_recode %>% mutate_at(vars("AGR1", "AGR3", "AGR5", "AGR7"), funs(flip_fn))
+
+#Conscientiousness
+
+df_recode <- df_recode %>% mutate_at(vars("CSN2", "CSN4", "CSN6", "CSN8"), funs(flip_fn))
+
+#Imagination
+
+df_recode <- df_recode %>% mutate_at(vars("OPN2", "OPN4", "OPN6"), funs(flip_fn))
+
+#stitch the dataframes back together
+
+df[, 1:51]<- df_recode[, 1:51]
+
+```
+
+```{r}
+
+set.seed(3000)
+df_small <- sample_n(df, 1000)
+
+#df_small[,2:51]
+
+#run PCA on the small dataframe, dropping any rows with NA's
+df_pca <- df_small[,2:51] %>% #only the traits, not ID or other variables
+  drop_na%>% #drop rows with NA
+  princomp() #do PCA on it
+
+#various ways of looking at the results
+summary(df_pca)
+loadings(df_pca) 
+plot(loadings(df_pca))
+screeplot(df_pca)
+unclass(df_pca$loadings)
+
+#make a dataframe of the PCA scores for plotting
+scores <- data.frame(df_pca$scores)
+
+#plot first two components
+pca12<- scores %>%
+  ggplot(aes(Comp.1, Comp.2))+
+  geom_point()
+  
+
+
+```
