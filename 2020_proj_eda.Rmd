@@ -90,9 +90,33 @@ df_recode <- df_recode %>% mutate_at(vars("CSN2", "CSN4", "CSN6", "CSN8"), funs(
 
 df_recode <- df_recode %>% mutate_at(vars("OPN2", "OPN4", "OPN6"), funs(flip_fn))
 
+#make average score for each of the five traits
+
+#extraversion
+df_recode <- df_recode %>% mutate(group_by(id), extra = Matrix::rowMeans(dplyr::select(.,starts_with("EXT")), na.rm=T))
+
+
+#emotional stability
+df_recode <- df_recode %>% mutate(group_by(id), stable = Matrix::rowMeans(dplyr::select(.,starts_with("EST")), na.rm=T))
+
+#agreeableness
+df_recode <- df_recode %>% mutate(group_by(id), agree = Matrix::rowMeans(dplyr::select(.,starts_with("AGR")), na.rm=T))
+
+#Conscientiousness
+
+df_recode <- df_recode %>% mutate(group_by(id), consc = Matrix::rowMeans(dplyr::select(.,starts_with("CSN")), na.rm=T))
+
+#Imagination
+
+df_recode <- df_recode %>% mutate(group_by(id), open = Matrix::rowMeans(dplyr::select(.,starts_with("OPN")), na.rm=T))
+
 #stitch the dataframes back together
 
 df[, 1:51]<- df_recode[, 1:51]
+
+#write a new csv file
+
+write_csv(df, "~/Documents/School/Data Science/Data 2020/Final Project/data_MHS.csv")
 
 ```
 
@@ -101,7 +125,8 @@ df[, 1:51]<- df_recode[, 1:51]
 set.seed(3000)
 df_small <- sample_n(df, 1000)
 
-#df_small[,2:51]
+df_traits_small <- sample_n(df_recode, 1000)
+
 
 #run PCA on the small dataframe, dropping any rows with NA's
 df_pca <- df_small[,2:51] %>% #only the traits, not ID or other variables
@@ -124,5 +149,14 @@ pca12<- scores %>%
   geom_point()
   
 
+
+```
+
+```{r}
+
+
+#make a correlation matrix of all the questions
+
+#make a correlation matrix of the averages
 
 ```
