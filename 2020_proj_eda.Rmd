@@ -74,7 +74,7 @@ table(df_traits$EXT2, df_recode$EXT2) #it worked
 #Emotional Stability
 
 #now that the df_recode dataframe exists, overwrite it
-df_recode <- df_recode %>% mutate_at(vars("EST1", "EST3", "EST4", "EST5", "EST6", "EST7", "EST8", "EST9", "EST10"), funs(flip_fn))
+df_recode <- df_recode %>% mutate_at(vars("EST1", "EST3", "EST5", "EST6", "EST7", "EST8", "EST9", "EST10"), funs(flip_fn))
 
 table(df_traits$EST1, df_recode$EST1) #it worked
 
@@ -112,11 +112,13 @@ df_recode <- df_recode %>% mutate(group_by(id), open = Matrix::rowMeans(dplyr::s
 
 #stitch the dataframes back together
 
-df[, 1:51]<- df_recode[, 1:51]
+#df[, 1:51]<- df_recode[, 1:51] #jk this no longer works because with the averages they're not the same size
 
-#write a new csv file
+#write a new csv file of recodes and averages
 
-write_csv(df, "~/Documents/School/Data Science/Data 2020/Final Project/data_MHS.csv")
+write_csv(df_recode, "~/Documents/School/Data Science/Data 2020/Final Project/data_MHS.csv")
+
+
 
 ```
 
@@ -154,9 +156,31 @@ pca12<- scores %>%
 
 ```{r}
 
+#install.packages('gplots')
+library(gplots)
+
+corr_frame <- df_recode[, 2:51]
+
+colnames(corr_frame)
+
+corr_frame2 <- df_recode[, 52:56]
 
 #make a correlation matrix of all the questions
 
+mat1 <- cor(corr_frame, use = "complete.obs")
+
+colors<- colorRampPalette(c("blue", "white", "red"))(20)
+
+heat1 <- heatmap(mat1, col = colors, symm = TRUE)
+
+heat3 <- heatmap.2(mat1, col = colors, Rowv = FALSE, Colv = FALSE, density.info="none", trace="none", main= "Correlation Matrix of the 50 Questions")
+
 #make a correlation matrix of the averages
+
+mat2 <- cor(corr_frame2, use = "complete.obs")
+
+heat2 <- heatmap(mat2, col = colors, symm = TRUE)
+
+
 
 ```
